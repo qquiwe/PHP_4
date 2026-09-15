@@ -3,6 +3,13 @@ require_once __DIR__ . '/functions.php';
 
 $transactions = getAllTransactions($pdo);
 $totalBalance = balance($pdo);
+$categories = getCategories($pdo);
+
+// суми за кожною категорією
+$categorySummary = [];
+foreach ($categories as $cat) {
+    $categorySummary[$cat] = totalByCategory($pdo, $cat);
+}
 
 // фільтр за категорією (демонстрація findByCategory через параметризований запит)
 $filterCategory = $_GET['category'] ?? '';
@@ -12,7 +19,6 @@ if ($filterCategory !== '') {
     $transactions = $stmt->fetchAll();
 }
 
-$categories = getCategories($pdo);
 ?>
 <!DOCTYPE html>
 <html lang="uk">
@@ -38,18 +44,45 @@ $categories = getCategories($pdo);
         .btn-add { background: #2563eb; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; }
         form.filter { margin: 15px 0; }
         select, button { padding: 6px 10px; }
+        .summary { margin-top: 20px; }
+        .summary h2 { font-size: 1.1em; margin-bottom: 8px; }
+        .summary table { margin-top: 0; }
+        .summary td.amount-pos, .summary td.amount-neg { text-align: right; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <h1>Трекер особистих витрат (варіант 13)</h1>
+    <h1>Трекер особистих витрат</h1>
     <a class="btn-add" href="add.php">+ Додати операцію</a>
 </div>
 
 <p class="balance <?= $totalBalance >= 0 ? 'positive' : 'negative' ?>">
     Загальний баланс: <?= number_format($totalBalance, 2, ',', ' ') ?> грн
 </p>
+
+<div class="summary">
+    <h2>Суми за категоріями</h2>
+    <?php if (empty($categorySummary)): ?>
+        <p>Немає даних для підрахунку.</p>
+    <?php else: ?>
+        <table>
+            <thead>
+            <tr><th>Категорія</th><th>Сума, грн</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($categorySummary as $cat => $sum): ?>
+                <tr>
+                    <td><?= htmlspecialchars($cat) ?></td>
+                    <td class="<?= $sum >= 0 ? 'amount-pos' : 'amount-neg' ?>">
+                        <?= number_format($sum, 2, ',', ' ') ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</div>
 
 <form class="filter" method="get" action="index.php">
     <label for="category">Фільтр за категорією:</label>
