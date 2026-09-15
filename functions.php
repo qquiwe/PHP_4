@@ -9,6 +9,14 @@ function getAllTransactions(PDO $pdo): array
     return $stmt->fetchAll();
 }
 
+// вибірка за конкретною категорією (використовується для фільтра на index.php)
+function findByCategory(PDO $pdo, string $category): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM transactions WHERE category = :category ORDER BY transaction_date DESC, id DESC');
+    $stmt->execute([':category' => $category]);
+    return $stmt->fetchAll();
+}
+
 // один запис за id (для форми редагування)
 function getTransactionById(PDO $pdo, int $id): ?array
 {
